@@ -1,11 +1,9 @@
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Client {
@@ -20,17 +18,17 @@ model Client {
 model AuditResponse {
   id        String   @id @default(cuid())
   clientId  String
-  domain    String   // e.g. "professional_work", "communication", etc.
-  answers   Json     // { question: string, answer: string }[]
+  domain    String
+  answers   Json
   client    Client   @relation(fields: [clientId], references: [id])
 }
 
 model AuditReport {
-  id              String   @id @default(cuid())
-  clientId        String   @unique
-  automationMap   Json     // Full structured output from Claude
-  quickWins       Json     // Top 10 wins
+  id                  String   @id @default(cuid())
+  clientId            String   @unique
+  automationMap       Json
+  quickWins           Json
   implementationGuide Json
-  generatedAt     DateTime @default(now())
-  client          Client   @relation(fields: [clientId], references: [id])
+  generatedAt         DateTime @default(now())
+  client              Client   @relation(fields: [clientId], references: [id])
 }

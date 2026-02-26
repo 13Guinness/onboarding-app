@@ -1,8 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Uses OpenRouter with claude-sonnet-4-5 — same model, better pricing
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const MODEL = "anthropic/claude-sonnet-4-5";
 
 export interface AuditResponse {
   domain: string;
@@ -38,13 +36,21 @@ export async function generateAuditReport(
 ): Promise<AuditReport> {
   const profileJson = JSON.stringify(responses, null, 2);
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 4096,
-    messages: [
-      {
-        role: "user",
-        content: `You are an AI automation consultant. Based on the following client profile for ${clientName}, generate a comprehensive AI Life Automation Audit.
+  const res = await fetch(OPENROUTER_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://onboarding-app-drab.vercel.app",
+      "X-Title": "OpenClaw Onboarding Audit",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4096,
+      messages: [
+        {
+          role: "user",
+          content: `You are an AI automation consultant. Based on the following client profile for ${clientName}, generate a comprehensive AI Life Automation Audit.
 
 CLIENT PROFILE:
 ${profileJson}
@@ -73,12 +79,19 @@ Generate a structured JSON response with:
 5. estimatedWeeklyTimeSaved: total hours/week if they implement all quick wins (number)
 
 Return ONLY valid JSON. No markdown, no explanation, no code fences.`,
-      },
-    ],
+        },
+      ],
+    }),
   });
 
-  const content = message.content[0];
-  if (content.type !== "text") throw new Error("Unexpected response type");
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OpenRouter error: ${res.status} ${err}`);
+  }
 
-  return JSON.parse(content.text) as AuditReport;
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Empty response from OpenRouter");
+
+  return JSON.parse(text) as AuditReport;
 }

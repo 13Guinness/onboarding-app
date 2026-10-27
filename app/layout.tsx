@@ -18,13 +18,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en" className="dark">
-        <body className={`${geist.variable} antialiased bg-[#0a0a0a] text-white`}>
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en" className="dark">
+      <body className={`${geist.variable} antialiased bg-[#0a0a0a] text-white`}>
+        {children}
+      </body>
+    </html>
   );
+
+  // Preview builds do not receive the production Clerk key. Skip the provider
+  // so static page generation can finish. Production still has the key.
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return content;
+  }
+
+  return <ClerkProvider>{content}</ClerkProvider>;
 }

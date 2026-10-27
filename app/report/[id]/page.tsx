@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
 import type { AutomationOpportunity } from "@/lib/claude";
+import { findOwnedReport } from "@/lib/owned-report";
 
 const IMPACT_COLORS: Record<string, string> = {
   transformative: "bg-amber-500/20 text-amber-400 border-amber-500/30",
@@ -61,10 +62,8 @@ export default async function ReportPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const report = await prisma.auditReport.findUnique({
-    where: { id },
-    include: { client: true },
-  });
+  const { userId } = await auth();
+  const report = userId ? await findOwnedReport(id, userId) : null;
 
   if (!report || Object.keys(report.automationMap as object).length === 0) {
     notFound();
@@ -89,7 +88,7 @@ export default async function ReportPage({
             {report.client.name ? `${report.client.name}'s Automation Map` : "Your Automation Map"}
           </h1>
           <p className="text-zinc-400 text-lg">
-            Here's where AI can win back your time — ranked by impact.
+            Here&apos;s where AI can win back your time — ranked by impact.
           </p>
         </div>
 

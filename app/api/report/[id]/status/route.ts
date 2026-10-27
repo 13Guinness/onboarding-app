@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import { findOwnedReport } from "@/lib/owned-report";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const report = await prisma.auditReport.findUnique({ where: { id } });
+  const { userId } = await auth();
+  const report = userId ? await findOwnedReport(id, userId) : null;
 
   if (!report) {
-    return NextResponse.json({ ready: false });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Report is ready when automationMap has content

@@ -22,11 +22,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Upsert client
+    // The signed-in Clerk user owns this row. The submitted email is contact
+    // info only and must never select another person's client.
     const client = await prisma.client.upsert({
-      where: { email },
-      update: { name },
-      create: { email, name },
+      where: { clerkUserId: userId },
+      update: { name, email },
+      create: { clerkUserId: userId, email, name },
     });
 
     // Save responses
@@ -55,8 +56,8 @@ export async function POST(req: NextRequest) {
     const placeholderId = placeholder.id;
     generateAuditReport(responses, name)
       .then(async (report) => {
-        await prisma.auditReport.update({
-          where: { id: placeholderId },
+        await prisma.auditReport.updateMany({
+          where: { id: placeholderId, client: { clerkUserId: userId } },
           data: {
             automationMap: report.automationMap as unknown as Prisma.InputJsonValue,
             quickWins: report.quickWins as unknown as Prisma.InputJsonValue,

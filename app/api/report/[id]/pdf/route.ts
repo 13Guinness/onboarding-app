@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import { findOwnedReport } from "@/lib/owned-report";
 
 // PDF generation placeholder — returns a simple text for now
 // Replace with @react-pdf/renderer once server-side rendering is confirmed working
@@ -8,11 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-
-  const report = await prisma.auditReport.findUnique({
-    where: { id },
-    include: { client: true },
-  });
+  const { userId } = await auth();
+  const report = userId ? await findOwnedReport(id, userId) : null;
 
   if (!report) {
     return new NextResponse("Report not found", { status: 404 });

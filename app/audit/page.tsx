@@ -18,6 +18,8 @@ export default function AuditPage() {
     const saved = localStorage.getItem("audit_answers");
     const savedContact = localStorage.getItem("audit_contact");
     const savedStep = localStorage.getItem("audit_step");
+    // localStorage is read after mount so the server HTML stays stable.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore a saved draft once, after mount
     if (saved) setAnswers(JSON.parse(saved));
     if (savedContact) setContact(JSON.parse(savedContact));
     if (savedStep) setStep(parseInt(savedStep));
@@ -113,7 +115,7 @@ export default function AuditPage() {
 
           <div className="space-y-2">
             <h2 className="text-3xl font-bold text-white">Where should we send your report?</h2>
-            <p className="text-zinc-400">We'll generate your personalized automation map and email you a copy.</p>
+            <p className="text-zinc-400">We&apos;ll generate your personalized automation map and email you a copy.</p>
           </div>
 
           <div className="space-y-4">
